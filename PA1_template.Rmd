@@ -8,18 +8,105 @@ output:
 
 ## Loading and preprocessing the data
 
+#1&2. Process/transform the data (if necessary) into a format suitable for your analysis
+
+setwd("E:/Coursera-R_Prog/Reproducible Research/Week1/activity")
+activitydata <- read.csv("activity.csv", header=TRUE, sep=",")
 
 
 ## What is mean total number of steps taken per day?
 
+#1. Calculate the total number of steps taken per day
+
+stepsperday <- aggregate(activitydata$steps, list(activitydata$date), sum, na.rm=TRUE)
+colnames(stepsperday) <- c("date","steps")
+
+#2. histogram of the total number of steps each day
+
+ggplot(stepsperday, aes(x = steps)) + 
+  geom_histogram(fill = "grey") + 
+  labs(title="Histogram of total number of steps each day", 
+       x = "Steps per Day", y = "Count") + theme_bw() 
+
+# 3. Calculate and report the mean and median of the total number of steps taken per day
+
+meansteps <- mean(stepsperday[,2], na.rm=TRUE)
+medsteps <- median(stepsperday[,2], na.rm=TRUE)
 
 
 ## What is the average daily activity pattern?
 
 
+#1. Time series plot
+stepsperinterval <- aggregate(activitydata$steps, list(activitydata$interval), mean, na.rm=TRUE)
+
+which.max(stepsperinterval[,2])
+plot(stepsperinterval$x, type="l", main="Time Series Plot")
+
+#2. max num of steps on 5-min interval on average across all the days in the dataset
+maxsteps=which.max(stepsperinterval[,2])
+print(paste0(stepsperinterval[maxsteps,1]))
+
 
 ## Imputing missing values
 
 
+# 1. Calculating number of missing values 
+sum(is.na(activitydata$steps))
+
+
+
+#2. strategy for filling in all of the missing values in the dataset.
+
+#We will use the mean of the data to fill the missing values in the datasets::
+  
+
+# 3. Creating a new dataset that is equal to the original dataset 
+#    but with the missing data filled in.
+
+  activitydatawithmisingvals <- activitydata
+for (i in which(sapply(activitydatawithmisingvals, is.numeric))){
+  activitydatawithmisingvals[is.na(activitydatawithmisingvals[,i]), i] <- mean(activitydatawithmisingvals[,i], na.rm=TRUE)
+  }
+
+  
+#4.  fill_steps_per_day <- aggregate(steps ~ date, rdata_fill, sum)
+  stepsperday_withmissingvals <- aggregate(activitydatawithmisingvals$steps, list(activitydatawithmisingvals$date), sum, na.rm=TRUE)
+
+  colnames(stepsperday_withmissingvals) <- c("date_wmv","steps_wmv")
+  
+  #histogram of the total number of steps each day
+  
+  ggplot(stepsperday_withmissingvals, aes(x = steps_wmv)) + 
+    geom_histogram(fill = "grey") + 
+    labs(title="Histogram of total number of steps each day", 
+         x = "Steps per Day", y = "Count") + theme_bw() 
+  
+  
+
+  meansteps_wmv <- mean(stepsperday_withmissingvals[,2], na.rm=TRUE)
+  meansteps_wmv <- median(stepsperday_withmissingvals[,2], na.rm=TRUE)
+
+
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+  #1 Create a new factor variable in the dataset with two levels - weekend and weekday
+  stepsperday_withmissingvals[,"wkday"] <- weekdays(as.Date(stepsperday_withmissingvals$date))
+  
+  stepsperday_withmissingvals$wkday[stepsperday_withmissingvals$wkday=="Monday" | stepsperday_withmissingvals$wkday=="Tuesday" | stepsperday_withmissingvals$wkday=="Wednesday" | stepsperday_withmissingvals$wkday=="Thursday" | stepsperday_withmissingvals$wkday=="Friday"] <- "weekday"
+  
+  stepsperday_withmissingvals$wkday[stepsperday_withmissingvals$wkday=="Saturday" | stepsperday_withmissingvals$wkday=="Sunday"] <- "weekend"
+  
+  
+  #2 Make a panel plot containing a time series plot
+  
+  stepsperdayWD <- activitydatawithmisingvals[activitydatawithmisingvals$wkday=="weekday",]
+  stepsperintWD <- aggregate(stepsperdayWD$steps, list(stepsperdayWD$interval), mean, na.rm=TRUE)
+  plot(stepsperintWD$x, type="l", main="Weekday")
+  
+  stepsperdayWE <- stepsperday_withmissingvals[stepsperday_withmissingvals$wkday=="weekend",]
+  stepsperintWE <- aggregate(stepsperdayWE$steps, list(stepsperdayWE$interval), mean, na.rm=TRUE)
+  plot(stepsperintWE$x, type="l", main="Weekend")
+  
+  
